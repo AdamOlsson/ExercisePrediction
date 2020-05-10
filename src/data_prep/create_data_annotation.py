@@ -1,11 +1,10 @@
 import os
 
 root              = "exercises"
-path_data         = "../../data/{}/".format(root) # path relative this file
-path_csv_save_loc = "../../data/annotations.csv"  # path relative this file
+path_data         = "../../data/videos/{}/".format(root) # path relative this file
+path_csv_save_loc = "../../data/videos/annotations.csv"  # path relative this file
 
-# entries = []
-with open(path_csv_save_loc,'r+') as f:
+with open(path_csv_save_loc,'w+') as f:
     data = f.read()
     f.seek(0)
     f.write("# filename,label\n") # Header
