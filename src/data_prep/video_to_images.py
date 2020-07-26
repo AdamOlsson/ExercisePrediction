@@ -8,7 +8,8 @@ root                = "exercises"
 path_data           = "../../data/videos/{}/".format(root) # path relative this file
 path_image_save_log = "../../data/images/{}/".format(root)
 path_csv_save_loc   = "../../data/images/annotations.csv"  # path relative this file
-
+exclude = ["clean_and_jerk", "power_clean_and_jerk", "push_press_and_jerk", "snatch_balance",
+            "jerk", "power_snatch_and_snatch", "snatch_and_power_snatch", "frontsquat", "power_snatch", "snatch_pull"]
 
 # Debugging
 def show_frame(frame):
@@ -25,13 +26,17 @@ try:
 except OSError:
     print(" ### Directory '{}' does not exist, no delete performed.".format(path_image_save_log))
 
-os.mkdir(path_image_save_log)
+os.makedirs(path_image_save_log)
 
 with open(path_csv_save_loc,'w+') as f:
     data = f.read()
     f.seek(0)
     f.write("# filename,label\n") # Header
     for dir in os.listdir(path_data):
+        
+        if dir in exclude:
+            print("### SKIPPING {}".format(dir))
+            continue
 
         print("### CREATING DIRECTORY {}".format(dir))
         new_dir = path_image_save_log + "{}".format(dir) 
