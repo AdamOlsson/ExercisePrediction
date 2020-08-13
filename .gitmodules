@@ -1,0 +1,3 @@
+[submodule "PosePrediction"]
+	path = PosePrediction
+	url = https://github.com/AdamOlsson/PosePrediction.git
