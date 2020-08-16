@@ -16,6 +16,22 @@ import json
 # https://github.com/dawidejdeholm/dj_graph/blob/master/Utils/SECParser.py
 
 
+"""
+In the cases where nodes are missing from the human graph, investigate if it
+is possible to temporally connect the node to frame t+2, i.e skipping connecting 
+to frame t+1.
+
+t=2   ^ O--O--O
+      | |  |  |
+      | |  |  |
+t=1   | |  O--O <- node missing from this timestep
+      | |  |  |
+      | |  |  | <- temporal edge
+t=0   | O--O--O <- nodes with spatial edges
+      |
+    time
+"""
+
 class GraphDataset(Dataset):
     '''
     A graph dataset built from human pose predictions. The unprocessed graphs are adapted to easy use of 
