@@ -13,7 +13,13 @@ according to https://arxiv.org/pdf/1801.07455.pdf
 The output directory receives the following format:
 
 <output_dir>/
-    annotations.csv
+    annotations/
+        <label1>/
+            <file>.json
+            ...
+        <label2>/
+            <file>.json
+            ...
     data/
         <label1>/
             <file>.npy
@@ -21,13 +27,13 @@ The output directory receives the following format:
         <label2>/
             <file>.npy
             ...
-
 """
 
-from os import listdir
-from os.path import join, isfile
+from os import listdir, mkdirs
+from os.path import join, isfile, exists
 import sys, getopt, json
 import numpy as np
+from shutil import rmtree
 
 
 def parse_args(argv):
@@ -83,7 +89,22 @@ def json_to_ndarry(input_dir):
 def save(path, data):
     pass
 
+def setup(input_dir, output_dir):
+
+    # TODO: Before continuing here, create script for generating graph data many videos
+
+    data_root = join(output_dir, "numpy_graph_data")
+
+    if exists(data_root):
+        rmtree(data_root)
+    
+    # data_annotations = join(data_root, "annotations")
+
+    # mkdirs(data_root)
+
+
 
 if __name__ == "__main__":
     input_dir, output_dir = parse_args(sys.argv[1:])
+    setup(output_dir)
     data = json_to_ndarry(input_dir)
