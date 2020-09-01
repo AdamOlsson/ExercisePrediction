@@ -1,6 +1,17 @@
-from Datasets.GraphDataset import GraphDataset
+# custom
+from Datasets.GeneralDataset import GeneralDataset
 
-dataset = GraphDataset(save_dir="../datasets/weightlifting/graphs", raw_dir="PosePrediction/data/graphs/videos")
+# native
+import numpy as np
 
-print(dataset.raw_file_names)
-print(dataset.processed_file_names)
+def main(annotations_path):
+    dataset = GeneralDataset(annotations_path, np.load)
+    
+    for i in range(len(dataset)):
+        data = dataset[i]
+        print(type(data["data"]))
+
+
+if __name__ == "__main__":
+    annotations_path = "../datasets/weightlifting/ndarrays/annotations.csv" 
+    main(annotations_path)
