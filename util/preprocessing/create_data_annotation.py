@@ -1,8 +1,8 @@
 import os
 
 root              = "exercises"
-path_data         = "../../data/videos/{}/".format(root) # path relative this file
-path_csv_save_loc = "../../data/videos/annotations.csv"  # path relative this file
+path_data         = "../datasets/weightlifting/videos/{}/".format(root) # path relative this file
+path_csv_save_loc = "../datasets/weightlifting/videos/annotations.csv"  # path relative this file
 
 with open(path_csv_save_loc,'w+') as f:
     data = f.read()
