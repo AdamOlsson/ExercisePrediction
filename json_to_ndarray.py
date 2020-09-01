@@ -103,7 +103,7 @@ def main(input_dir, output_dir):
         np.save(savepath, data_numpy)
 
         with open(annotations_out, "a") as f:
-            f.write("{},{},{}\n".format(dataset_name, labels[i], data_numpy.shape))
+            f.write("{},{},{},{},{},{}\n".format(dataset_name, labels[i], C,T,V,M))
 
 
     return data_numpy
@@ -111,5 +111,5 @@ def main(input_dir, output_dir):
 
 if __name__ == "__main__":
     input_dir, output_dir = parse_args(sys.argv[1:])
-    output_dir = setup(input_dir, output_dir, "ndarrays", "filename,label,shape")
+    output_dir = setup(input_dir, output_dir, "ndarrays", "filename,label,C,T,V,M")
     data = main(input_dir, output_dir)
