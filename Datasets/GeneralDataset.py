@@ -9,7 +9,8 @@ class GeneralDataset(Dataset):
     '''A general dataset for loading data. To be able to handle different types of data, a
     load function needs to be provide upon initialization.
 
-    The class assumes that the first value in the csv annotations file is the filename.
+    The class assumes that the first value in the csv annotations file is the filename and the
+    second value is the label.
 
     Arguements
         annotations_path (String) - path to the annotations file
@@ -19,6 +20,7 @@ class GeneralDataset(Dataset):
     def __init__(self, annotations_path, load_fn, transform=None):
         self.root = dirname(annotations_path)
         self.annotations = read_csv(annotations_path)
+        self.labels = list(set(self.annotations.iloc[:,1]))
         self.load = load_fn
         self.transform = transform
 
@@ -30,7 +32,9 @@ class GeneralDataset(Dataset):
         label = self.annotations.iloc[idx, 1]
         data = self.load(name)
 
-        if not self.transform == None:
-            data = self.transform(data)
+        sample = {"data":data, "label":label}
 
-        return {"data":data, "label":label}
+        if not self.transform == None:
+            sample = self.transform(sample)
+
+        return sample
