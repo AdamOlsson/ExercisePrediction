@@ -34,13 +34,13 @@ def batchLabels(one_hot, labels):
 def main(annotations_path):
 
     # Hyperparameters
-    device   = "cuda"        # device
-    lr = 0.01
-    momentum = 0.9
-    decay = 0.0001
-    loss_fn  = CrossEntropyLoss()  # loss
+    device   = "cuda"
     layout   = "openpose"
     strategy = "spatial"
+    lr       = 0.01
+    momentum = 0.9
+    decay    = 0.0001
+    loss_fn  = CrossEntropyLoss()
 
     transform = [ToTensor(dtype=torch.float32, requires_grad=False, device=device)]
     dataset = GeneralDataset(annotations_path, np.load, transform=Compose(transform))
