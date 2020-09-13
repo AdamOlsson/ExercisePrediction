@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 # model and loss
 from models.st_gcn.st_gcn_aaai18 import ST_GCN_18
 from torch.optim import SGD
+from torch.optim.lr_scheduler import StepLR
 from torch.nn import CrossEntropyLoss
 
 # other
@@ -31,6 +32,7 @@ def oneHotEncodeLabels(labels):
 def batchLabels(one_hot, labels):
     return torch.tensor([one_hot[labels[0]]], requires_grad=False, dtype=torch.long)
 
+
 def main(annotations_path):
 
     # Hyperparameters
@@ -38,6 +40,7 @@ def main(annotations_path):
     layout   = "openpose"
     strategy = "spatial"
     lr       = 0.01
+    gamma    = 0.9
     momentum = 0.9
     decay    = 0.0001
     loss_fn  = CrossEntropyLoss()
@@ -53,6 +56,7 @@ def main(annotations_path):
     model = ST_GCN_18(3, len(dataset.labels), graph_cfg, edge_importance_weighting=True, data_bn=True).to(device)
 
     optimizer = SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=decay, nesterov=True)
+    lr_scheduler = StepLR(optimizer, 20, gamma=gamma)
     model.train()
 
     # TODO: Epochs
@@ -62,13 +66,14 @@ def main(annotations_path):
         video = sample_batched["data"]
         label = batchLabels(labels, sample_batched["label"]).to(device)
         # TODO Fix batch labeling
-        # TODO: adjust lr
         output = model(video)
         loss = loss_fn(output, label)
         
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
+        lr_scheduler.step()
 
         losses.append(loss.data.item())
 
