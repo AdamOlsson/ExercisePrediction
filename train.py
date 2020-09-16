@@ -2,6 +2,7 @@
 from Datasets.GeneralDataset import GeneralDataset
 from Transformers.ToTensor import ToTensor
 from torch.utils.data import DataLoader
+from PosePrediction.util.load_config import load_config
 
 # model and loss
 from models.st_gcn.st_gcn_aaai18 import ST_GCN_18
@@ -35,18 +36,28 @@ def batchLabels(one_hot, labels):
 
 def main(annotations_path):
 
+    config = load_config("config.json")
+
     # Hyperparameters
-    device   = "cuda"
-    layout   = "openpose"
-    strategy = "spatial"
-    lr       = 0.01
-    gamma    = 0.9
-    momentum = 0.9
-    decay    = 0.0001
+    device      = config["train"]["device"]
+    layout      = config["train"]["layout"]
+    strategy    = config["train"]["strategy"]
+    lr          = config["train"]["lr"]
+    gamma       = config["train"]["gamma"]
+    momentum    = config["train"]["momentum"]
+    decay       = config["train"]["decay"]
+    test_split  = config["train"]["test_split"]
+
     loss_fn  = CrossEntropyLoss()
 
+    exclude_classes = [ "clean", "clean_and_jerk", "clean_pull", "jerk",
+                        "other", "power_clean_and_jerk", "power_clean_power_jerk", "power_jerk",
+                        "power_snatch", "power_snatch_and_snatch", "push_press_and_jerk", "snatch_and_power_snatch",
+                        "snatch_balance", "snatch_pull", "squat_jerk", "clean_power_jerk"] # prototyping purpose
+
     transform = [ToTensor(dtype=torch.float32, requires_grad=False, device=device)]
-    dataset = GeneralDataset(annotations_path, np.load, transform=Compose(transform))
+    dataset = GeneralDataset(annotations_path, np.load, transform=Compose(transform), classes_to_exclude=exclude_classes)
+
     dataloader = DataLoader(dataset, batch_size=1, shuffle=True, num_workers=0)
 
     # one-hot encode labels for loss computations

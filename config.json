@@ -1,0 +1,12 @@
+{
+    "train":{
+        "device"    : "cuda",
+        "layout"    : "openpose",
+        "strategy"  : "spatial",
+        "lr"        : 0.01,
+        "gamma"     : 0.9,
+        "momentum"  : 0.9,
+        "decay"     : 0.0001,
+        "test_split": 0.9
+    }
+}

@@ -17,12 +17,18 @@ class GeneralDataset(Dataset):
         load_fn (function) - a function that takes a filename (string) as arguement
                              and loads the data.
     '''
-    def __init__(self, annotations_path, load_fn, transform=None):
+    def __init__(self, annotations_path, load_fn, transform=None, classes_to_exclude=None):
         self.root = dirname(annotations_path)
-        self.annotations = read_csv(annotations_path)
-        self.labels = list(set(self.annotations.iloc[:,1]))
         self.load = load_fn
         self.transform = transform
+
+        self.annotations = read_csv(annotations_path, header=0)
+        # exclude classes
+        if classes_to_exclude != None:
+            df = self.annotations
+            self.annotations = df[~df["label"].isin(classes_to_exclude)]
+
+        self.labels = list(set(self.annotations.iloc[:,1]))
 
     def __len__(self):
         return len(self.annotations)
