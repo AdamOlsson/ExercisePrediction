@@ -14,6 +14,7 @@ from torch.nn import CrossEntropyLoss
 import numpy as np
 import torch, torchvision
 from torchvision.transforms import Compose
+from datetime import datetime
 
 
 def batchLabels(dic, labels):
@@ -92,11 +93,17 @@ def main(annotations_path):
             # print("Step {}, Mean loss: {}".format((i_batch), mean_loss))
             # losses = []
 
+    # TODO: Save network
 
-    # TODO: Evaluate
     model.eval()
     dataloader = DataLoader(testset, batch_size=2, shuffle=True, num_workers=0)
     
+    ct = datetime.now()
+    current_time = "{}-{}-{}-{}:{}:{}".format(ct.year, ct.month, ct.day, ct.hour, ct.minute, ct.second)
+    log_name = "log/mispredictions_{}.csv".format(current_time)
+    with open(log_name, "a") as f:
+        f.write("# predicted,correct,filename\n")
+
     count_no_errors = 0
     confusion_matrix = np.zeros((len(dataset.labels),len(dataset.labels)))
     for i_batch, sample_batched in enumerate(dataloader):
@@ -115,15 +122,15 @@ def main(annotations_path):
         count_no_errors += len(wrong_indices)
         confusion_matrix[predicted_class, label] += 1
 
-        print(confusion_matrix)
+        with open(log_name, "a") as f:
+            for i in wrong_indices:
+                f.write("{},{},{}\n".format(
+                    valueToKey(labels, predicted_class[i]),
+                    valueToKey(labels, label[i]),
+                    sample_batched["name"][i]))
 
-        exit()
 
 
-
-
-
-    # TODO: Save network
     # TODO: Statistics
     print("Mean loss after training: {}".format(np.mean(losses)))
         
