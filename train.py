@@ -137,7 +137,7 @@ def main(annotations_path):
     
     fig = plt.figure()
     
-    ax = fig.add_subplot(111)
+    ax = fig.add_subplot(212)
     ax.set_title("Confusion Matrix")
     ax.imshow(confusion_matrix)
 
@@ -153,13 +153,20 @@ def main(annotations_path):
     ax.set_xlabel("Correct Class")
     ax.set_ylabel("Predicted Class")
 
-
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
 
     for i in range(len(classes)):
         for j in range(len(classes)):
             _ = ax.text(j, i, confusion_matrix[i, j], ha="center", va="center", color="w")
-        
+    
+    ax2 = fig.add_subplot(211)
+    ax2.set_title("Training Loss over Epochs")
+    ax2.plot(loss_per_epoch)
+
+    ax2.set_xlabel("Loss")
+    ax2.set_ylabel("Epochs")
+
+
     fig.tight_layout()
     fig.savefig("doc/statistics.png")
 
