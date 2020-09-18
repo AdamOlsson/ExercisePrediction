@@ -73,29 +73,30 @@ def main(annotations_path):
 
     losses = []
     loss_per_epoch = []
-    # for i_batch, sample_batched in enumerate(dataloader):
-        # video = sample_batched["data"]
-        # label = batchLabels(labels, sample_batched["label"]).to(device)
-# 
-        # output = model(video)
-        # loss = loss_fn(output, label)
-        # 
-        # optimizer.zero_grad()
-        # loss.backward()
-        # optimizer.step()
-# 
-        # lr_scheduler.step()
-# 
-        # losses.append(loss.data.item())
-# 
-        # if i_batch % epoch_size == 0:
-            # mean_loss = np.mean(losses)
-            # loss_per_epoch.append(mean_loss)
-            # print("Step {}, Mean loss: {}".format((i_batch), mean_loss))
-            # losses = []
+    for i_batch, sample_batched in enumerate(dataloader):
+        video = sample_batched["data"]
+        label = batchLabels(labels, sample_batched["label"]).to(device)
 
-    # TODO: Save network
+        output = model(video)
+        loss = loss_fn(output, label)
+        
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        lr_scheduler.step()
+
+        losses.append(loss.data.item())
+
+        if i_batch % epoch_size == 0:
+            mean_loss = np.mean(losses)
+            loss_per_epoch.append(mean_loss)
+            print("Step {}, Mean loss: {}".format((i_batch), mean_loss))
+            losses = []
+
     print("Mean loss after training: {}".format(np.mean(losses)))
+
+    torch.save(model.state_dict(), "ST_GCN_18.pth")
 
     model.eval()
     dataloader = DataLoader(testset, batch_size=2, shuffle=True, num_workers=0)
@@ -133,7 +134,6 @@ def main(annotations_path):
 
 
     print("Failure rate: {}%".format(count_no_errors/len(testset)))
-    # TODO: Statistics
     
     fig = plt.figure()
     
@@ -170,6 +170,7 @@ def main(annotations_path):
     fig.tight_layout()
     fig.savefig("doc/statistics.png")
 
+# TODO: Read args from cmd line
 if __name__ == "__main__":
     annotations_path = "../datasets/weightlifting/ndarrays/annotations.csv" 
     main(annotations_path)
