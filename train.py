@@ -1,7 +1,7 @@
 # custom
 from Datasets.GeneralDataset import GeneralDataset
 from Transformers.ToTensor import ToTensor
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 from PosePrediction.util.load_config import load_config
 
 # model and loss
@@ -58,7 +58,12 @@ def main(annotations_path):
     transform = [ToTensor(dtype=torch.float32, requires_grad=False, device=device)]
     dataset = GeneralDataset(annotations_path, np.load, transform=Compose(transform), classes_to_exclude=exclude_classes)
 
-    dataloader = DataLoader(dataset, batch_size=1, shuffle=True, num_workers=0)
+    test_len  = int(len(dataset)*test_split)
+    train_len = len(dataset)-test_len
+
+    trainset, testset = random_split(dataset, [train_len, test_len])
+
+    dataloader = DataLoader(trainset, batch_size=1, shuffle=True, num_workers=0)
 
     # one-hot encode labels for loss computations
     labels = oneHotEncodeLabels(dataset.labels)
