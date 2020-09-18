@@ -15,6 +15,7 @@ import numpy as np
 import torch, torchvision
 from torchvision.transforms import Compose
 from datetime import datetime
+import matplotlib.pyplot as plt
 
 
 def batchLabels(dic, labels):
@@ -94,6 +95,7 @@ def main(annotations_path):
             # losses = []
 
     # TODO: Save network
+    print("Mean loss after training: {}".format(np.mean(losses)))
 
     model.eval()
     dataloader = DataLoader(testset, batch_size=2, shuffle=True, num_workers=0)
@@ -106,7 +108,7 @@ def main(annotations_path):
 
     count_no_errors = 0
     confusion_matrix = np.zeros((len(dataset.labels),len(dataset.labels)))
-    for i_batch, sample_batched in enumerate(dataloader):
+    for _, sample_batched in enumerate(dataloader):
         video = sample_batched["data"]
         label = batchLabels(labels, sample_batched["label"]).to(device)
 
@@ -130,11 +132,36 @@ def main(annotations_path):
                     sample_batched["name"][i]))
 
 
-
+    print("Failure rate: {}%".format(count_no_errors/len(testset)))
     # TODO: Statistics
-    print("Mean loss after training: {}".format(np.mean(losses)))
-        
+    
+    fig = plt.figure()
+    
+    ax = fig.add_subplot(111)
+    ax.set_title("Confusion Matrix")
+    ax.imshow(confusion_matrix)
 
+    classes = []
+    for i in range(len(dataset.labels)):
+        classes.append(valueToKey(labels, i))
+
+    ax.set_xticks(np.arange(len(classes)))
+    ax.set_yticks(np.arange(len(classes)))
+    ax.set_xticklabels(classes)
+    ax.set_yticklabels(classes)
+
+    ax.set_xlabel("Correct Class")
+    ax.set_ylabel("Predicted Class")
+
+
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+
+    for i in range(len(classes)):
+        for j in range(len(classes)):
+            _ = ax.text(j, i, confusion_matrix[i, j], ha="center", va="center", color="w")
+        
+    fig.tight_layout()
+    fig.savefig("doc/statistics.png")
 
 if __name__ == "__main__":
     annotations_path = "../datasets/weightlifting/ndarrays/annotations.csv" 
