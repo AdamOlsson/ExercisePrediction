@@ -5,3 +5,5 @@ Pipfile.lock
 build/
 dist/
 log/
+ST_GCN_18.pth
+doc/*

@@ -56,7 +56,7 @@ def main(annotations_path):
 
     transform = [ToTensor(dtype=torch.float32, requires_grad=False, device=device)]
     dataset = GeneralDataset(annotations_path, np.load, transform=Compose(transform), classes_to_exclude=exclude_classes)
-
+    # TODO: Try to remove some snatch samples to even out the distribution
     test_len  = int(len(dataset)*test_split)
     train_len = len(dataset)-test_len
 
@@ -68,7 +68,7 @@ def main(annotations_path):
     model = ST_GCN_18(3, len(dataset.labels), graph_cfg, edge_importance_weighting=True, data_bn=True).to(device)
 
     optimizer = SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=decay, nesterov=True)
-    lr_scheduler = StepLR(optimizer, 20, gamma=gamma)
+    lr_scheduler = StepLR(optimizer, 10, gamma=gamma)
     model.train()
 
     losses = []
