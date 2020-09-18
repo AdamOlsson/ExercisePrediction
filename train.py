@@ -22,6 +22,11 @@ def batchLabels(dic, labels):
         t[i] = dic[lab]
     return t
 
+def valueToKey(dic, value):
+    for k, v in dic.items():
+        if v == value:
+            return k
+    return ""
 
 def main(annotations_path):
 
@@ -66,29 +71,58 @@ def main(annotations_path):
 
     losses = []
     loss_per_epoch = []
+    # for i_batch, sample_batched in enumerate(dataloader):
+        # video = sample_batched["data"]
+        # label = batchLabels(labels, sample_batched["label"]).to(device)
+# 
+        # output = model(video)
+        # loss = loss_fn(output, label)
+        # 
+        # optimizer.zero_grad()
+        # loss.backward()
+        # optimizer.step()
+# 
+        # lr_scheduler.step()
+# 
+        # losses.append(loss.data.item())
+# 
+        # if i_batch % epoch_size == 0:
+            # mean_loss = np.mean(losses)
+            # loss_per_epoch.append(mean_loss)
+            # print("Step {}, Mean loss: {}".format((i_batch), mean_loss))
+            # losses = []
+
+
+    # TODO: Evaluate
+    model.eval()
+    dataloader = DataLoader(testset, batch_size=2, shuffle=True, num_workers=0)
+    
+    count_no_errors = 0
+    confusion_matrix = np.zeros((len(dataset.labels),len(dataset.labels)))
     for i_batch, sample_batched in enumerate(dataloader):
         video = sample_batched["data"]
         label = batchLabels(labels, sample_batched["label"]).to(device)
 
         output = model(video)
-        loss = loss_fn(output, label)
-        
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        _, predicted_class = torch.max(output, 1)
 
-        lr_scheduler.step()
+        results = label - predicted_class
 
-        losses.append(loss.data.item())
+        wrong_indices = torch.flatten(torch.nonzero(results, as_tuple=False)).cpu().numpy()
+        predicted_class = predicted_class.cpu().numpy()
+        label           = label.cpu().numpy()
 
-        if i_batch % epoch_size == 0:
-            mean_loss = np.mean(losses)
-            loss_per_epoch.append(mean_loss)
-            print("Step {}, Mean loss: {}".format((i_batch), mean_loss))
-            losses = []
+        count_no_errors += len(wrong_indices)
+        confusion_matrix[predicted_class, label] += 1
+
+        print(confusion_matrix)
+
+        exit()
 
 
-    # TODO: Evaluate
+
+
+
     # TODO: Save network
     # TODO: Statistics
     print("Mean loss after training: {}".format(np.mean(losses)))
