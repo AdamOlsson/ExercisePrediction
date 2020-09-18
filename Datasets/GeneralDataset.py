@@ -38,7 +38,7 @@ class GeneralDataset(Dataset):
         label = self.annotations.iloc[idx, 1]
         data = self.load(name)
 
-        sample = {"data":data, "label":label}
+        sample = {"data":data, "label":label, "name":name}
 
         if not self.transform == None:
             sample = self.transform(sample)
