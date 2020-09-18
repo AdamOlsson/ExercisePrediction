@@ -57,6 +57,7 @@ def main(annotations_path):
     transform = [ToTensor(dtype=torch.float32, requires_grad=False, device=device)]
     dataset = GeneralDataset(annotations_path, np.load, transform=Compose(transform), classes_to_exclude=exclude_classes)
     # TODO: Try to remove some snatch samples to even out the distribution
+    # TODO: Try to load model params from mmskeleton and fine tune the last layers
     test_len  = int(len(dataset)*test_split)
     train_len = len(dataset)-test_len
 
