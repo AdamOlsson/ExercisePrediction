@@ -36,6 +36,8 @@ def main(annotations_path):
     momentum    = config["train"]["momentum"]
     decay       = config["train"]["decay"]
     test_split  = config["train"]["test_split"]
+    batch_size  = config["train"]["batch_size"]
+    epoch_size  = config["train"]["epoch_size"]
     labels      = config["labels"]
 
     loss_fn  = CrossEntropyLoss()
@@ -53,7 +55,7 @@ def main(annotations_path):
 
     trainset, testset = random_split(dataset, [train_len, test_len])
 
-    dataloader = DataLoader(trainset, batch_size=4, shuffle=True, num_workers=0)
+    dataloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=0)
     
     graph_cfg = {"layout":layout, "strategy":strategy}
     model = ST_GCN_18(3, len(dataset.labels), graph_cfg, edge_importance_weighting=True, data_bn=True).to(device)
@@ -79,8 +81,12 @@ def main(annotations_path):
 
         losses.append(loss.data.item())
 
-        if i_batch % 5 == 0:
-            print("Step {}, Mean loss: {}".format((i_batch), np.mean(losses)))
+        if i_batch % epoch_size == 0:
+            mean_loss = np.mean(losses)
+            loss_per_epoch.append(mean_loss)
+            print("Step {}, Mean loss: {}".format((i_batch), mean_loss))
+            losses = []
+
 
     # TODO: Evaluate
     # TODO: Save network
