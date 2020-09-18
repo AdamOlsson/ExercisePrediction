@@ -15,23 +15,12 @@ import numpy as np
 import torch, torchvision
 from torchvision.transforms import Compose
 
-def oneHotEncodeLabels(labels):
-    """Takes a list of string labels and one-hot encodes each item.
-    
-    Parameters:
-        labels - (list) list of string labels
 
-    Return:
-        (dict) a dict with each label as a key and respective one-hot encoding
-    """
-    one_hot = {}
-    for i, label in enumerate(labels):
-        one_hot[label] = i
-
-    return one_hot
-
-def batchLabels(one_hot, labels):
-    return torch.tensor([one_hot[labels[0]]], requires_grad=False, dtype=torch.long)
+def batchLabels(dic, labels):
+    t = torch.zeros(len(labels), requires_grad=False, dtype=torch.long)
+    for i, lab in enumerate(labels):
+        t[i] = dic[lab]
+    return t
 
 
 def main(annotations_path):
@@ -47,6 +36,7 @@ def main(annotations_path):
     momentum    = config["train"]["momentum"]
     decay       = config["train"]["decay"]
     test_split  = config["train"]["test_split"]
+    labels      = config["labels"]
 
     loss_fn  = CrossEntropyLoss()
 
@@ -63,10 +53,7 @@ def main(annotations_path):
 
     trainset, testset = random_split(dataset, [train_len, test_len])
 
-    dataloader = DataLoader(trainset, batch_size=1, shuffle=True, num_workers=0)
-
-    # one-hot encode labels for loss computations
-    labels = oneHotEncodeLabels(dataset.labels)
+    dataloader = DataLoader(trainset, batch_size=4, shuffle=True, num_workers=0)
     
     graph_cfg = {"layout":layout, "strategy":strategy}
     model = ST_GCN_18(3, len(dataset.labels), graph_cfg, edge_importance_weighting=True, data_bn=True).to(device)
@@ -75,13 +62,12 @@ def main(annotations_path):
     lr_scheduler = StepLR(optimizer, 20, gamma=gamma)
     model.train()
 
-    # TODO: Epochs
-    # TODO: Train/Test split
     losses = []
+    loss_per_epoch = []
     for i_batch, sample_batched in enumerate(dataloader):
         video = sample_batched["data"]
         label = batchLabels(labels, sample_batched["label"]).to(device)
-        # TODO Fix batch labeling
+
         output = model(video)
         loss = loss_fn(output, label)
         
@@ -96,6 +82,9 @@ def main(annotations_path):
         if i_batch % 5 == 0:
             print("Step {}, Mean loss: {}".format((i_batch), np.mean(losses)))
 
+    # TODO: Evaluate
+    # TODO: Save network
+    # TODO: Statistics
     print("Mean loss after training: {}".format(np.mean(losses)))
         
 
