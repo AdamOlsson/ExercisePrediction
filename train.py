@@ -62,6 +62,8 @@ def main(annotations_path):
     transform = [ToTensor(dtype=torch.float32, requires_grad=False, device=device)]
     dataset = GeneralDataset(annotations_path, np.load, transform=Compose(transform), classes_to_exclude=exclude_classes)
 
+    print(dataset.annotations["label"].value_counts())
+
     test_len  = int(len(dataset)*test_split)
     train_len = len(dataset)-test_len
 
@@ -72,16 +74,12 @@ def main(annotations_path):
     graph_cfg = {"layout":layout, "strategy":strategy}
     model = ST_GCN_18(3, len(dataset.labels), graph_cfg, edge_importance_weighting=True, data_bn=True).to(device)
 
-    #debug
-    # summary(model, dataset[0]["data"].shape)
-    # exit()
-
     optimizer = SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=decay, nesterov=True)
     lr_scheduler = StepLR(optimizer, 10, gamma=gamma)
     model.train()
 
     losses = []
-    loss_per_epoch = []
+    loss_per_50_steps = []
     for e in range(epochs):
         for i_batch, sample_batched in enumerate(dataloader, 0):
             video = sample_batched["data"]
@@ -101,13 +99,11 @@ def main(annotations_path):
             if i_batch % 50 == 0:
                 mean_loss = np.mean(losses)
                 print("Epoch {}, Step {}, Mean loss: {}".format(e, i_batch, mean_loss))
-
-        mean_loss = np.mean(losses)
-        loss_per_epoch.append(mean_loss)
-        losses = []
+                loss_per_50_steps.append(mean_loss)
+                losses = []
 
 
-    print("Mean loss after training: {}".format(np.mean(loss_per_epoch)))
+    print("Mean loss after training: {}".format(np.mean(loss_per_50_steps)))
 
     torch.save(model.state_dict(), "ST_GCN_18.pth")
 
@@ -127,7 +123,9 @@ def main(annotations_path):
         video = sample_batched["data"]
         label = batchLabels(labels, sample_batched["label"]).to(device)
 
-        output = model(video)
+        with torch.no_grad():
+            output = model(video)
+        
         _, predicted_class = torch.max(output, 1)
 
         results = label - predicted_class
@@ -174,11 +172,11 @@ def main(annotations_path):
             _ = ax.text(j, i, confusion_matrix[i, j], ha="center", va="center", color="w")
     
     ax2 = fig.add_subplot(211)
-    ax2.set_title("Training Loss over Epochs")
-    ax2.plot(loss_per_epoch)
+    ax2.set_title("Training Loss")
+    ax2.plot(loss_per_50_steps)
 
     ax2.set_ylabel("Loss")
-    ax2.set_xlabel("Epochs")
+    ax2.set_xlabel("50 Steps")
 
 
     fig.tight_layout()
