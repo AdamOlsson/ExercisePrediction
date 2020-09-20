@@ -49,7 +49,7 @@ def main(annotations_path):
     decay       = config["train"]["decay"]
     test_split  = config["train"]["test_split"]
     batch_size  = config["train"]["batch_size"]
-    epoch_size  = config["train"]["epoch_size"]
+    epochs      = config["train"]["epochs"]
     labels      = config["labels"]
 
     loss_fn  = CrossEntropyLoss()
@@ -83,28 +83,32 @@ def main(annotations_path):
 
     losses = []
     loss_per_epoch = []
-    for i_batch, sample_batched in enumerate(dataloader):
-        video = sample_batched["data"]
-        label = batchLabels(labels, sample_batched["label"]).to(device)
+    for e in range(epochs):
+        for i_batch, sample_batched in enumerate(dataloader, 0):
+            video = sample_batched["data"]
+            label = batchLabels(labels, sample_batched["label"]).to(device)
 
-        output = model(video)
-        loss = loss_fn(output, label)
-        
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+            optimizer.zero_grad()
 
-        lr_scheduler.step()
+            output = model(video)
+            loss = loss_fn(output, label)
+            loss.backward()
+            optimizer.step()
 
-        losses.append(loss.data.item())
+            lr_scheduler.step()
 
-        if i_batch % epoch_size == 0:
-            mean_loss = np.mean(losses)
-            loss_per_epoch.append(mean_loss)
-            print("Step {}, Mean loss: {}".format((i_batch), mean_loss))
-            losses = []
+            losses.append(loss.data.item())
 
-    print("Mean loss after training: {}".format(np.mean(losses)))
+            if i_batch % 50 == 0:
+                mean_loss = np.mean(losses)
+                print("Epoch {}, Step {}, Mean loss: {}".format(e, i_batch, mean_loss))
+
+        mean_loss = np.mean(losses)
+        loss_per_epoch.append(mean_loss)
+        losses = []
+
+
+    print("Mean loss after training: {}".format(np.mean(loss_per_epoch)))
 
     torch.save(model.state_dict(), "ST_GCN_18.pth")
 
@@ -133,11 +137,6 @@ def main(annotations_path):
         predicted_class = predicted_class.cpu().numpy()
         label           = label.cpu().numpy()
 
-        # print("Predicted class index: {}({}), Correct class: {}({})\nlabels:{}\n".format( predicted_class, valueToKey(labels, predicted_class),
-                                                                                    # label, valueToKey(labels, label),
-                                                                                    # labels))
-
-
         count_no_errors += len(wrong_indices)
         confusion_matrix[predicted_class, label] += 1
 
@@ -159,7 +158,7 @@ def main(annotations_path):
 
     classes = []
     for i in range(len(dataset.labels)):
-        classes.append(valueToKey(labels, i))
+        classes.append(valueToKey(labels, [i])[0])
 
     ax.set_xticks(np.arange(len(classes)))
     ax.set_yticks(np.arange(len(classes)))
@@ -179,8 +178,8 @@ def main(annotations_path):
     ax2.set_title("Training Loss over Epochs")
     ax2.plot(loss_per_epoch)
 
-    ax2.set_xlabel("Loss")
-    ax2.set_ylabel("Epochs")
+    ax2.set_ylabel("Loss")
+    ax2.set_xlabel("Epochs")
 
 
     fig.tight_layout()
