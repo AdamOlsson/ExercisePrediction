@@ -17,6 +17,8 @@ from torchvision.transforms import Compose
 from datetime import datetime
 import matplotlib.pyplot as plt
 
+# debug
+from torchsummary import summary
 
 def batchLabels(dic, labels):
     t = torch.zeros(len(labels), requires_grad=False, dtype=torch.long)
@@ -25,10 +27,13 @@ def batchLabels(dic, labels):
     return t
 
 def valueToKey(dic, value):
-    for k, v in dic.items():
-        if v == value:
-            return k
-    return ""
+    ret = []
+    for val in value:
+        for k, v in dic.items():
+            if v == val:
+                ret.append(k)
+                break
+    return ret
 
 def main(annotations_path):
 
@@ -68,6 +73,10 @@ def main(annotations_path):
     graph_cfg = {"layout":layout, "strategy":strategy}
     model = ST_GCN_18(3, len(dataset.labels), graph_cfg, edge_importance_weighting=True, data_bn=True).to(device)
 
+    #debug
+    # summary(model, dataset[0]["data"].shape)
+    # exit()
+
     optimizer = SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=decay, nesterov=True)
     lr_scheduler = StepLR(optimizer, 10, gamma=gamma)
     model.train()
@@ -100,7 +109,8 @@ def main(annotations_path):
     torch.save(model.state_dict(), "ST_GCN_18.pth")
 
     model.eval()
-    dataloader = DataLoader(testset, batch_size=2, shuffle=True, num_workers=0)
+    # NOTE: Batch eval currently not supported
+    dataloader = DataLoader(testset, batch_size=1, shuffle=True, num_workers=0)
     
     ct = datetime.now()
     current_time = "{}-{}-{}-{}:{}:{}".format(ct.year, ct.month, ct.day, ct.hour, ct.minute, ct.second)
@@ -123,14 +133,19 @@ def main(annotations_path):
         predicted_class = predicted_class.cpu().numpy()
         label           = label.cpu().numpy()
 
+        # print("Predicted class index: {}({}), Correct class: {}({})\nlabels:{}\n".format( predicted_class, valueToKey(labels, predicted_class),
+                                                                                    # label, valueToKey(labels, label),
+                                                                                    # labels))
+
+
         count_no_errors += len(wrong_indices)
         confusion_matrix[predicted_class, label] += 1
 
         with open(log_name, "a") as f:
             for i in wrong_indices:
                 f.write("{},{},{}\n".format(
-                    valueToKey(labels, predicted_class[i]),
-                    valueToKey(labels, label[i]),
+                    valueToKey(labels, [predicted_class[i]]),
+                    valueToKey(labels, [label[i]]),
                     sample_batched["name"][i]))
 
 
