@@ -76,8 +76,10 @@ def main(input_dir, output_dir, dataset_name, epochs=1):
     labels = [splitext(f)[0] for f in videos ]
 
     working_dir = join(output_dir, dataset_name)
-    if exists(working_dir):
-        rmtree(working_dir)
+
+    # Because I will probably need to run the script on multiple occasion per class, we remove this for now...
+    # if exists(working_dir):
+        # rmtree(working_dir)
 
     samples_dir = join(working_dir, "samples")
     makedirs(samples_dir)
