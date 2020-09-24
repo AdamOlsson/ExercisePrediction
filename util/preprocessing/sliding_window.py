@@ -22,6 +22,33 @@ def rotate(image, **kwargs):
     result = cv2.warpAffine(image, rot_mat, image.shape[1::-1], flags=cv2.INTER_LINEAR)
     return result
 
+def scaleAndCrop(image, **kwargs):
+    scale_factor = kwargs["scale_factor"]
+    crop_scale_y, crop_scale_x = kwargs["crop_scale"][0], kwargs["crop_scale"][1]
+
+    resized_image = cv2.resize(image, None, fx=scale_factor, fy=scale_factor)
+
+    old_w, old_h = image.shape[1], image.shape[0]
+    new_w, new_h = resized_image.shape[1], resized_image.shape[0]
+
+    if scale_factor > 1:
+        # upscaled, need to crop
+        top_left_y = int(crop_scale_y*(new_h - old_h))
+        top_left_x = int(crop_scale_x*(new_w - old_w))
+
+        image[:] = resized_image[top_left_y:top_left_y+old_h, top_left_x:top_left_x+old_w]
+
+        return image
+
+    else:
+        # downscaled, need to put into image
+        top_left_y = int(crop_scale_y*(old_h - new_h))
+        top_left_x = int(crop_scale_x*(old_w - new_w))
+
+        image.fill(0)
+        image[top_left_y:top_left_y + new_h, top_left_x:top_left_x + new_w] = resized_image[:]
+
+        return image 
 
 def sliding_window(video_path, save_path, epoch_id, preprocess=[]):
     T = 300
@@ -41,6 +68,10 @@ def sliding_window(video_path, save_path, epoch_id, preprocess=[]):
             # New sample, create new preprocess values
             rnd = np.random.uniform(-1,1)
             rotation = 45 * rnd
+            scale_factor = np.random.uniform(0.4, 1.4)
+
+            crop_scale_y = np.random.uniform(0,1)
+            crop_scale_x = np.random.uniform(0,1)
 
             # Create save directory
             sample_id = str(epoch_id) + str(sample_count)
@@ -53,7 +84,7 @@ def sliding_window(video_path, save_path, epoch_id, preprocess=[]):
 
         for f in range(len(clip)):
             for p in preprocess:
-                clip[f] = p(clip[f], rotation=rotation)
+                clip[f] = p(clip[f], rotation=rotation, scale_factor=scale_factor, crop_scale=(crop_scale_y, crop_scale_x))
         
         clip = torch.tensor(clip)
 
@@ -78,8 +109,8 @@ def main(input_dir, output_dir, dataset_name, epochs=1):
     working_dir = join(output_dir, dataset_name)
 
     # Because I will probably need to run the script on multiple occasion per class, we remove this for now...
-    # if exists(working_dir):
-        # rmtree(working_dir)
+    if exists(working_dir):
+        rmtree(working_dir)
 
     samples_dir = join(working_dir, "samples")
     makedirs(samples_dir)
@@ -89,7 +120,7 @@ def main(input_dir, output_dir, dataset_name, epochs=1):
     with open(annotations_file, "a") as f:
         f.write("# filename,label\n")
 
-    preprocess = [rotate] # list of functions
+    preprocess = [scaleAndCrop, rotate] # list of functions
     for e in range(epochs):
         for v, l in zip(videos, labels):
             class_dir = join(samples_dir, l)
