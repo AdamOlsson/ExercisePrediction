@@ -53,62 +53,60 @@ def scaleAndCrop(image, **kwargs):
 def sliding_window(video_path, save_path, epoch_id, preprocess=[]):
     T = 300
     no_subsets = 2
+    len_half = int(T/no_subsets)
 
-    videoclips = VideoClips([video_path], clip_length_in_frames=int(T/no_subsets), frames_between_clips=1)
+    videoclips = VideoClips([video_path], clip_length_in_frames=len_half, frames_between_clips=1)
 
     filenames = []
     rotation = 0
     sample_count = -1
     sample_dir = ""
     sample_id = ""
-    for i in range(len(videoclips)):
+    for i in range(len(videoclips) - len_half):
 
-        if i % no_subsets == 0:
-            sample_count += 1
-            # New sample, create new preprocess values
-            rnd = np.random.uniform(-1,1)
-            rotation = 45 * rnd
-            scale_factor = np.random.uniform(0.4, 1.4)
+        sample_count += 1
+        # New sample, create new preprocess values
+        rnd = np.random.uniform(-1,1)
+        rotation = 45 * rnd
+        scale_factor = np.random.uniform(0.4, 1.4)
 
-            crop_scale_y = np.random.uniform(0,1)
-            crop_scale_x = np.random.uniform(0,1)
+        crop_scale_y = np.random.uniform(0,1)
+        crop_scale_x = np.random.uniform(0,1)
 
-            # Create save directory
-            sample_id = str(epoch_id) + str(sample_count)
-            sample_dir = join(save_path, sample_id)
-            mkdir(sample_dir)
+        # Create save directory
+        sample_id = "e" + str(epoch_id) + "_no_" + str(sample_count)
+        sample_dir = join(save_path, sample_id)
+        mkdir(sample_dir)
 
-        # Preprocess
-        clip,_,_, _ = videoclips.get_clip(i)
-        clip = clip.numpy()
+        # Preprocess both halves
+        for j in range(no_subsets):
+            clip,_,_, _ = videoclips.get_clip(i + j*len_half)
 
-        for f in range(len(clip)):
-            for p in preprocess:
-                clip[f] = p(clip[f], rotation=rotation, scale_factor=scale_factor, crop_scale=(crop_scale_y, crop_scale_x))
+            clip = clip.numpy()
+
+            for f in range(len(clip)):
+                for p in preprocess:
+                    clip[f] = p(clip[f], rotation=rotation, scale_factor=scale_factor, crop_scale=(crop_scale_y, crop_scale_x))
         
-        clip = torch.tensor(clip)
+            clip = torch.tensor(clip)
 
-        # Save
-        filename = "{}/{}{}.mp4".format(sample_id, str(sample_count), str(i%no_subsets))
-        filepath = join(save_path, filename)
-        torchvision.io.write_video(filepath, clip, 30)
-        filenames.append(filename)
-        print(filepath)
+            # Save
+            filename = "{}/{}.mp4".format(sample_id, str(j))
+            filepath = join(save_path, filename)
+            torchvision.io.write_video(filepath, clip, 30)
+            filenames.append(filename)
+            print("{}, {}, {}/{}".format(filepath, epoch_id, i, len(videoclips)-len_half))
 
-        # debug
-        if i > 4:
-            break
 
     return filenames
 
 
-def main(input_dir, output_dir, dataset_name, epochs=1):
+def main(input_dir, output_dir, dataset_name, epochs=3):
     videos = [f for f in listdir(input_dir) if isfile(join(input_dir, f))]
     labels = [splitext(f)[0] for f in videos ]
 
     working_dir = join(output_dir, dataset_name)
 
-    # Because I will probably need to run the script on multiple occasion per class, we remove this for now...
     if exists(working_dir):
         rmtree(working_dir)
 
@@ -124,7 +122,9 @@ def main(input_dir, output_dir, dataset_name, epochs=1):
     for e in range(epochs):
         for v, l in zip(videos, labels):
             class_dir = join(samples_dir, l)
-            mkdir(class_dir)
+            
+            if not exists(class_dir):
+                mkdir(class_dir)
 
             filenames = sliding_window(join(input_dir,v), class_dir, e, preprocess=preprocess)
 
@@ -136,5 +136,5 @@ def main(input_dir, output_dir, dataset_name, epochs=1):
 
 if __name__ == "__main__":
     input_dir = "../datasets/weightlifting/sliding_window/full_videos"
-    output_dir = "../datasets/weightlifting"
-    main(input_dir, output_dir, "videos2")
+    output_dir = "../datasets/weightlifting/sliding_window"
+    main(input_dir, output_dir, "slided")
