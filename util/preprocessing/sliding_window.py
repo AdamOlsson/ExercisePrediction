@@ -98,16 +98,22 @@ def main(input_dir, output_dir, dataset_name, epochs=1):
 
     working_dir = join(output_dir, dataset_name)
 
-    if exists(working_dir):
-        rmtree(working_dir)
 
     samples_dir = join(working_dir, "samples")
-    makedirs(samples_dir)
-
     annotations_file = join(working_dir, "annotations.csv")
-    # setup csv
-    with open(annotations_file, "a") as f:
-        f.write("# filename,label\n")
+
+    partial_run = False
+    if not partial_run: 
+        # partial run, if I run epochs at separate occations.
+        # DONT FORGET TO CHANGE EPOCH VALUE
+        if exists(working_dir):
+           rmtree(working_dir)
+ 
+        makedirs(samples_dir)
+ 
+        # setup csv
+        with open(annotations_file, "a") as f:
+           f.write("# filename,label\n")
 
     preprocess = [scaleAndCrop, rotate] # list of functions
     for e in range(epochs):
@@ -117,7 +123,7 @@ def main(input_dir, output_dir, dataset_name, epochs=1):
             if not exists(class_dir):
                 mkdir(class_dir)
 
-            filenames = sliding_window(join(input_dir,v), class_dir, e, preprocess=preprocess)
+            filenames = sliding_window(join(input_dir,v), class_dir, e, preprocess=preprocess) # DONT FORGET TO CHANGE e TO CORRECT LOOP ITERATION
 
             # create csv from filenames
             with open(annotations_file, "a") as f:
