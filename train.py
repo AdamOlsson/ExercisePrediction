@@ -50,6 +50,7 @@ def main(annotations_path):
     test_split  = config["train"]["test_split"]
     batch_size  = config["train"]["batch_size"]
     epochs      = config["train"]["epochs"]
+    no_workers  = config["train"]["no_workers"]
     labels      = config["labels"]
 
     loss_fn  = CrossEntropyLoss()
@@ -59,7 +60,7 @@ def main(annotations_path):
                         "power_snatch", "power_snatch_and_snatch", "push_press_and_jerk", "snatch_and_power_snatch",
                         "snatch_balance", "snatch_pull", "squat_jerk", "clean_power_jerk"] # prototyping purpose
 
-    transform = [ToTensor(dtype=torch.float32, requires_grad=False, device=device)]
+    transform = [ToTensor(dtype=torch.float32, requires_grad=False, device="cpu")] # preprocessing done on cpu
     dataset = GeneralDataset(annotations_path, np.load, transform=Compose(transform), classes_to_exclude=exclude_classes)
 
     print(dataset.annotations["label"].value_counts())
@@ -69,7 +70,7 @@ def main(annotations_path):
 
     trainset, testset = random_split(dataset, [train_len, test_len])
 
-    dataloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=0)
+    dataloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=no_workers)
     
     graph_cfg = {"layout":layout, "strategy":strategy}
     model = ST_GCN_18(3, len(dataset.labels), graph_cfg, edge_importance_weighting=True, data_bn=True).to(device)
@@ -82,7 +83,7 @@ def main(annotations_path):
     loss_per_50_steps = []
     for e in range(epochs):
         for i_batch, sample_batched in enumerate(dataloader, 0):
-            video = sample_batched["data"]
+            video = sample_batched["data"].to(device)
             label = batchLabels(labels, sample_batched["label"]).to(device)
 
             optimizer.zero_grad()
@@ -120,7 +121,7 @@ def main(annotations_path):
     count_no_errors = 0
     confusion_matrix = np.zeros((len(dataset.labels),len(dataset.labels)))
     for _, sample_batched in enumerate(dataloader):
-        video = sample_batched["data"]
+        video = sample_batched["data"].to(device)
         label = batchLabels(labels, sample_batched["label"]).to(device)
 
         with torch.no_grad():

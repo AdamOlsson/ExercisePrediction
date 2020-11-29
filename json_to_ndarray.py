@@ -64,20 +64,18 @@ def main(input_dir, output_dir):
     annotations_in = pd.read_csv(join(input_dir, "annotations.csv"))
     filenames   = annotations_in.iloc[:,0]
     labels      = annotations_in.iloc[:,1]
-    #length      = annotations_in.iloc[:,2]
 
     annotations_out = join(output_dir, "annotations.csv")
 
     input_filenames = [join(input_dir, f) for f in filenames]
 
     for i, name in enumerate(input_filenames):
-        print("Processing {}".format(name))
+        print("{:6d} ::: Processing {}".format(i, name))
         with open(name) as f:
             data = json.load(f)
  
         frames = data["frames"]
  
-        # for t, frame in enumerate(frames):
         for t in range(T):
             if t >= T: # Clip videos to T frames
                 break
